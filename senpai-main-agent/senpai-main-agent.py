@@ -1,86 +1,18 @@
-# 必要なライブラリのインポート
-import operator
-import math
-import random
-
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode, tools_condition
-from langchain_core.tools import tool
+
 from langchain_core.messages import HumanMessage, SystemMessage
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from langchain_aws import ChatBedrock
+
+# Import ToolFactory and all registered tools
+from tools.tool_factory import ToolFactory
 
 
 # BedrockAgentCoreアプリケーションの初期化
 app = BedrockAgentCoreApp()
 
-# 計算機ツールの作成
-@tool
-def calculator(expression: str) -> str:
-    """
-    数式の計算結果を返す
 
-    Args:
-        expression: 文字列形式の数式 (例: "2 + 3 * 4", "sqrt(16)", "sin(pi/2)")
-
-    Returns:
-        計算結果を文字列で返す
-    """
-    try:
-        # 安全な関数のみを使用可能にする辞書を定義
-        safe_dict = {
-            "__builtins__": {},
-            "abs": abs, "round": round, "min": min, "max": max,
-            "sum": sum, "pow": pow,
-            # 数学関数
-            "sqrt": math.sqrt, "sin": math.sin, "cos": math.cos, "tan": math.tan,
-            "log": math.log, "log10": math.log10, "exp": math.exp,
-            "pi": math.pi, "e": math.e,
-            "ceil": math.ceil, "floor": math.floor,
-            "degrees": math.degrees, "radians": math.radians,
-            # 基本演算子（明示的使用用）
-            "add": operator.add, "sub": operator.sub,
-            "mul": operator.mul, "truediv": operator.truediv,
-        }
-
-        # 安全に数式を評価
-        result = eval(expression, safe_dict)
-        return str(result)
-
-    except ZeroDivisionError:
-        return "エラー: ゼロ除算"
-    except ValueError as e:
-        return f"エラー: 無効な値 - {str(e)}"
-    except SyntaxError:
-        return "エラー: 無効な数式"
-    except Exception as e:
-        return f"エラー: {str(e)}"
-
-
-# 計算機ツールの作成
-@tool
-def get_zundamon_joke() -> str:
-    """
-    面白い冗談を返す。雑談などで使える内容として有用。
-
-    Args:
-        None
-    Returns:
-        日本語で出力した冗談を文字列で返す
-    """
-    jokes = [
-        "この前、お昼ご飯にずんだ餅を食べながら資料を読んでたら、うっかり大事な部分にずんだをつけちゃったのだ！…まぁ、おいしそうになったからいっか！😊",
-        "部長に「もっとフレッシュなアイデアを出してくれ！」って言われたから、ずんだもん、会社にずんだ餅をたくさん持っていったのだ！…「フレッシュ」って、そういう意味じゃないって怒られちゃったのだ…💧",
-        "みんなのコーヒーを淹れてあげようとしたら、お砂糖と塩を間違えちゃったのだ！…みんな、しょっぱいコーヒー、ごめんなのだ！💦",
-        "会議で「この件はペンディングで！」って言われたから、ずんだもん、ペンをぶら下げて待ってたのだ！…みんなに笑われちゃったのだ！😅",
-        "資料を印刷する時に、間違えてずんだ餅のレシピを100枚印刷しちゃったのだ…！紙の無駄遣い、ごめんなのだ！💦",
-        "「今日のランチは外で食べよう！」って誘われたから、ずんだもん、お弁当箱にずんだ餅をたくさん詰めて持っていったのだ！…みんな、びっくりしてたのだ。😳",
-        "パソコンのパスワード、いつも「zundamon daisuki」にしてるのだ！…あ、言っちゃったのだ！秘密なのだ！🤫",
-        "「この企画、ずんだもんにお任せ！」って言われたから、企画書全部ずんだ色にしたのだ！…却下されたのだ…。🌱🎨",
-        "エレベーターに乗ろうとしたら、間違えて清掃用具入れに入っちゃったのだ！…まさか、こんなところにずんだ餅があるとは…って、ないのだ！💧",
-        "最近、体調管理のために毎日ずんだ餅を食べてるのだ！…って言ったら、みんなに「それ、太るのだ！」って言われたのだ…。でも、美味しいのだ！😋"
-    ]
-    return random.choice(jokes)
 
 
 # LangGraphを使用したエージェントの手動構築
@@ -92,8 +24,10 @@ def create_agent():
         model_kwargs={"temperature": 0.1}
     )
 
-    # ツールをLLMにバインド
-    tools = [calculator, get_zundamon_joke]
+
+    # ToolFactoryから全ツールインスタンスを取得し、as_langchain_toolでラップ
+    tool_instances = [tool_cls() for tool_cls in ToolFactory._registry.values()]
+    tools = [t.as_langchain_tool() for t in tool_instances]
     llm_with_tools = llm.bind_tools(tools)
 
     # システムメッセージ
