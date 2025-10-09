@@ -6,7 +6,7 @@ from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from langchain_aws import ChatBedrock
 
 # Import ToolFactory and all registered tools
-from tools.tool_factory import ToolFactory
+from core.tools.tool_factory import ToolFactory
 
 
 # BedrockAgentCoreアプリケーションの初期化

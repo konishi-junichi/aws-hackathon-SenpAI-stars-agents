@@ -1,4 +1,5 @@
 # AgentCore Runtime デプロイメント用ライブラリのインポート
+import shutil
 from bedrock_agentcore_starter_toolkit import Runtime
 from boto3.session import Session
 import os
@@ -28,22 +29,23 @@ os.chdir(agent_dir)
 # Check if custom Dockerfile exists to prevent regeneration
 custom_dockerfile_exists = os.path.exists('Dockerfile')
 
-if not custom_dockerfile_exists:
-    # copy ../core folder to current folder and remove after configure
-    import shutil
-    shutil.copytree(os.path.join(os.path.dirname(__file__), '..', 'core'), 'core')
+# copy ../core folder to current folder and remove after configure
+shutil.copytree(os.path.join(os.path.dirname(__file__), '..', 'core'), 'core')
 
-    response = agentcore_runtime.configure(
-        entrypoint=os.getenv('AGENT_ENDPOINT_NAME') + ".py",        # メインエージェントエントリーポイントファイル
-        auto_create_execution_role=True,                            # IAM実行ロールの自動作成
-        auto_create_ecr=True,                                       # ECRリポジトリの自動作成
-        requirements_file="requirements.txt",                       # Python依存関係ファイル
-        region=region,                                              # デプロイメント用AWSリージョン
-        agent_name=agent_name,                                      # エージェント名識別子
-    )
+response = agentcore_runtime.configure(
+    entrypoint=os.getenv('AGENT_ENDPOINT_NAME') + ".py",        # メインエージェントエントリーポイントファイル
+    auto_create_execution_role=True,                            # IAM実行ロールの自動作成
+    auto_create_ecr=True,                                       # ECRリポジトリの自動作成
+    requirements_file="requirements.txt",                       # Python依存関係ファイル
+    region=region,                                              # デプロイメント用AWSリージョン
+    agent_name=agent_name,                                      # エージェント名識別子
+)
 
-    shutil.rmtree('core') # remove copied core folder
-print(response)
     
 # エージェントをAgentCore Runtimeにデプロイ・起動
 launch_result = agentcore_runtime.launch(auto_update_on_conflict=True)
+
+# local build
+# launch_result = agentcore_runtime.launch(local=True, auto_update_on_conflict=True)
+
+shutil.rmtree('core') # remove copied core folder
