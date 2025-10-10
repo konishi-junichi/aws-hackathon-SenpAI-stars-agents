@@ -67,7 +67,7 @@ pip install -r requirements.txt
 Run deployment script in the agent directory:
 ```bash
 cd senpai-main-agent
-python deploy.py
+python test/deploy.py
 ```
 
 ### 4. Run Tests
