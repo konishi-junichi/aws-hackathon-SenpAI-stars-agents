@@ -1,16 +1,21 @@
 import boto3
 import json
+import os
+from dotenv import load_dotenv
+
+# 環境変数を読み込み（プロジェクトルートの.envファイルから）
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # agent_arn = launch_result.agent_arn
 agentcore_client = boto3.client(
     'bedrock-agentcore',
-    region_name='us-east-1'
+    region_name=os.getenv('AWS_REGION')
 )
 
 boto3_response = agentcore_client.invoke_agent_runtime(
-    agentRuntimeArn='arn:aws:bedrock-agentcore:us-east-1:YOUR_ACCOUNT_ID:runtime/YOUR_AGENT_RUNTIME_ID',
-    runtimeSessionId='test-session-123',
-    qualifier="DEFAULT",
+    agentRuntimeArn=os.getenv('AGENT_RUNTIME_ARN'),
+    runtimeSessionId=os.getenv('RUNTIME_SESSION_ID'),
+    qualifier=os.getenv('QUALIFIER', 'DEFAULT'),
     payload=json.dumps({"prompt": "こんにちは。あなたは誰ですか？"})
 )
 
