@@ -7,13 +7,11 @@ from langchain_aws import ChatBedrock
 
 # Import ToolFactory and all registered tools
 from core.tools.tool_factory import ToolFactory
+from core.tools.libs.zundamon_joke_tool import ZundamonJokeTool
 
 
 # BedrockAgentCoreアプリケーションの初期化
 app = BedrockAgentCoreApp()
-
-
-
 
 # LangGraphを使用したエージェントの手動構築
 def create_agent():
