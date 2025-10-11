@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode, tools_condition
 
@@ -19,7 +23,8 @@ def create_agent():
     # LLMの初期化（必要に応じてモデルとパラメータを調整）
     llm = ChatBedrock(
         model_id="us.amazon.nova-pro-v1:0",
-        model_kwargs={"temperature": 0.1}
+        model_kwargs={"temperature": 0.1},
+        region_name=os.getenv("AWS_REGION", "us-west-2")
     )
 
 
