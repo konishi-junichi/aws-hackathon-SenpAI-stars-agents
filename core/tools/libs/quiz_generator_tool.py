@@ -1,0 +1,88 @@
+from core.tools.tool_interface import Tool
+from core.tools.tool_factory import ToolFactory
+import boto3
+import json
+import os
+
+@ToolFactory.register_tool
+class QuizGeneratorTool(Tool):
+    @property
+    def name(self):
+        return "generate_quiz"
+
+    @property
+    def description(self):
+        return "既存のナレッジベースから新入社員向けの3択問題集をJSON形式で生成します。トピック、難易度、問題数を指定できます。"
+
+    def run(self, *args, **kwargs):
+        """
+        Bedrock Knowledgebaseから3択問題集をJSON形式で生成する
+        kwargs:
+        topic: 問題のトピック（デフォルト: "IT知識"）
+        difficulty: 難易度（初級、中級、上級）（デフォルト
+        num_questions: 生成する問題数（デフォルト: 3）
+        """
+        # パラメータを抽出
+        print(kwargs)
+        kwargs = kwargs.get("kwargs", {})
+        topic = kwargs.get('topic', 'IT知識')
+        difficulty = kwargs.get('difficulty', '初級')
+        num_questions = kwargs.get('num_questions', 3)
+        try:
+            kb = boto3.client("bedrock-agent-runtime", region_name=os.getenv("AWS_REGION", "us-west-2"))
+            
+            query = f"""{topic}について{difficulty}レベルの3択問題を{num_questions}問、異なる種類の問題を作成してください。
+            以下のJSON形式で回答してください：
+            {{
+                "questions": ["問題文1", "問題文2", ...],
+                "selects": [{{"A": "選択肢Aの文章", "B": "選択肢Bの文章", "C": "選択肢Cの文章"}}, ...],
+                "answers": ["A", "B", ...],
+                "explanations": ["解説1の文章", "解説2の文章", ...]
+            }}
+            各問題は選択肢A、B、Cの3択形式で、学習に適した内容にしてください。"""
+            
+            response = kb.retrieve_and_generate(
+                input={"text": query},
+                retrieveAndGenerateConfiguration={
+                    "type": 'KNOWLEDGE_BASE',
+                    "knowledgeBaseConfiguration": {
+                        "knowledgeBaseId": os.getenv("KNOWLEDGE_BASE_ID", "MONBSPES2H"),
+                        "modelArn": os.getenv("MODEL_ARN", "arn:aws:bedrock:us-west-2:515154282310:inference-profile/us.amazon.nova-micro-v1:0"),
+                        "generationConfiguration": {
+                            "inferenceConfig": {
+                                "textInferenceConfig": {
+                                    "maxTokens": 2000
+                                }
+                            }
+                        },
+                        'retrievalConfiguration': {
+                            'vectorSearchConfiguration': {
+                                'numberOfResults': 10,
+                            }
+                        }
+                    },
+                },
+            )
+            
+            quiz_content = response["output"]["text"]
+            
+            # JSONを抽出・パース
+            start = quiz_content.find('{')
+            end = quiz_content.rfind('}') + 1
+            if start != -1 and end != 0:
+                json_str = quiz_content[start:end]
+                quiz_data = json.loads(json_str)
+                # print(json.dumps(quiz_data, ensure_ascii=False, indent=2))
+                return json.dumps(quiz_data, ensure_ascii=False)
+            else:
+                raise ValueError("JSON形式が見つからない")
+            
+        except Exception as e:
+            print(f"Error generating quiz: {e}")
+            # フォールバック: 手動でJSON作成
+            return json.dumps({
+                "questions": [f"{topic}に関する問題{i+1}" for i in range(num_questions)],
+                "selects": [{"A": "選択肢A", "B": "選択肢B", "C": "選択肢C"} for _ in range(num_questions)],
+                "answers": ["A"] * num_questions,
+                "explanations": [f"問題{i+1}の解説" for i in range(num_questions)]
+            }, ensure_ascii=False)
