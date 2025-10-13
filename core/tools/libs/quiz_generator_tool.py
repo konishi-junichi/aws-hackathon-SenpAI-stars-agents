@@ -6,6 +6,14 @@ import os
 
 @ToolFactory.register_tool
 class QuizGeneratorTool(Tool):
+    """
+    必要なIAM権限:
+    - bedrock:InvokeModel
+    - bedrock:Retrieve
+    - bedrock:RetrieveAndGenerate
+    - bedrock-agent-runtime:Retrieve
+    - bedrock-agent-runtime:RetrieveAndGenerate
+    """
     @property
     def name(self):
         return "generate_quiz"
@@ -79,6 +87,9 @@ class QuizGeneratorTool(Tool):
             
         except Exception as e:
             print(f"Error generating quiz: {e}")
+            print(f"Error type: {type(e).__name__}")
+            if "AccessDenied" in str(e) or "UnauthorizedOperation" in str(e):
+                print("権限エラー: bedrock-agent-runtime:RetrieveAndGenerate権限が必要です")
             # フォールバック: 手動でJSON作成
             return json.dumps({
                 "questions": [f"{topic}に関する問題{i+1}" for i in range(num_questions)],
