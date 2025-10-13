@@ -3,8 +3,8 @@ import requests
 import json
 
 def test_agent():
-    url = "http://localhost:8080"
-    
+    url = "http://localhost:8080/invocations?qualifier=DEFAULT"
+ 
     test_cases = [
         {"prompt": "Hello! Can you introduce yourself?"},
         {"prompt": "Calculate 15 * 7 + 3"},

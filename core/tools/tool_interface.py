@@ -37,4 +37,12 @@ class Tool(ABC):
             from langchain_core.tools import tool as lc_tool
         except ImportError:
             raise ImportError("langchain_core.tools.tool is required to use as_langchain_tool.")
-        return lc_tool(self.run, name=self.name, description=getattr(self, 'description', ''))
+        
+        # Create a wrapper function with proper name and description
+        def tool_func(*args, **kwargs):
+            return self.run(*args, **kwargs)
+        
+        tool_func.__name__ = self.name
+        tool_func.__doc__ = getattr(self, 'description', '')
+        
+        return lc_tool(tool_func)
