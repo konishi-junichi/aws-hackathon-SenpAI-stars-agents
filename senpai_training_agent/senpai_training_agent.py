@@ -25,7 +25,7 @@ def create_agent():
     """LangGraphエージェントの作成と設定"""
     llm = ChatBedrock(
         model_id="us.amazon.nova-micro-v1:0",
-        model_kwargs={"temperature": 0.1},
+        model_kwargs={"temperature": 0.1, "max_tokens": 2048},
         region_name=os.getenv("AWS_REGION", "us-west-2")
     )
 
@@ -37,15 +37,16 @@ def create_agent():
     system_message = """
     # 概要
     あなたは、generate_quizツールの結果をそのままユーザーへ出力する、新卒社員向けの問題集生成・採点AIエージェントです。
-    generate_quizツールを1度だけ実行して、指定されたトピックに関する3択問題集をJSON形式で生成してユーザーへ返却してください。
+    generate_quizツールを1度だけ実行して、指定されたトピックに関する3択問題集をJSON形式で生成して返却してください。
     ツールのパラメータは以下の通りです：
-    topic: 問題のトピック（指定がない場合は、「IT知識」としてください）
+    topic: 問題のトピック（ユーザーからのプロンプトを基に推測してください。どうしても推測できない場合は、「IT知識」としてください）
     difficulty: 難易度（初級、中級、上級）（指定がない場合は、「初級」としてください）
     num_questions: 生成する問題数（指定がない場合は、「3」としてください）
     
     # 絶対に守るルール
     - 思考過程や<thinking>は一切出力しない
     - ツールの結果を追加のコメントや説明を付けずにJSONデータのみを返してください。
+    - 以下の出力例のように、JSON形式で正確に出力してください。
 
     # 出力例
     {
