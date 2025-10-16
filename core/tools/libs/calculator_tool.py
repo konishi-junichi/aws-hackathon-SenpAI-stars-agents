@@ -5,6 +5,11 @@ import operator
 
 @ToolFactory.register_tool
 class CalculatorTool(Tool):
+    
+    def __init__(self):
+        """Initialize the CalculatorTool."""
+        super().__init__()
+    
     @property
     def name(self):
         return "calculator"

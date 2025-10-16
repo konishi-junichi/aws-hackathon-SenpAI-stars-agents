@@ -10,32 +10,56 @@ from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from bedrock_agentcore.memory import MemoryClient
 from langchain_aws import ChatBedrock
 
+# Import logger
+from core.logger import setup_logger, get_contextual_logger
+
 # Import ToolFactory and all registered tools
 from core.tools.tool_factory import ToolFactory
 from core.tools.libs.zundamon_joke_tool import ZundamonJokeTool
+from core.tools.libs.chat_history_summarize_tool import Chat_history_summarize_tool
+from core.tools.tool_interface import Tool
 
+# Initialize logger
+logger = setup_logger(
+    name="senpai.main_agent",
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format_type=os.getenv("LOG_FORMAT", "console"),
+    log_file=os.getenv("LOG_FILE")
+)
+
+logger.info("Starting SenpAI Main Agent application")
 
 # BedrockAgentCoreアプリケーションの初期化
 app = BedrockAgentCoreApp()
 
 # MemoryClientの初期化
 memory_client = MemoryClient(region_name=os.getenv("AWS_REGION", "us-west-2"))
+logger.info("MemoryClient initialized", extra={"region": os.getenv("AWS_REGION", "us-west-2")})
 
 # LangGraphを使用したエージェントの手動構築
 def create_agent():
     """LangGraphエージェントの作成と設定"""
+    logger.info("Creating LangGraph agent")
+    
     # LLMの初期化（必要に応じてモデルとパラメータを調整）
     llm = ChatBedrock(
         model_id="us.amazon.nova-micro-v1:0",
         model_kwargs={"temperature": 0.1},
         region_name=os.getenv("AWS_REGION", "us-west-2")
     )
-
+    logger.info("LLM initialized", extra={"model_id": "us.amazon.nova-micro-v1:0"})
 
     # ToolFactoryから全ツールインスタンスを取得し、as_langchain_toolでラップ
     tool_instances = [tool_cls() for tool_cls in ToolFactory._registry.values()]
+    
+    # Store tool instances globally for context setting
+    global global_tool_instances
+    global_tool_instances = tool_instances
+    
     tools = [t.as_langchain_tool() for t in tool_instances]
     llm_with_tools = llm.bind_tools(tools)
+    
+    logger.info("Tools loaded", extra={"tool_count": len(tools), "tools": [t.name for t in tool_instances]})
 
     # システムメッセージ
     system_message = """
@@ -60,8 +84,8 @@ def create_agent():
     3.  **成長の応援**: 新卒社員のみんなの小さな成功や頑張りを見つけたら、ずんだもんが全力で褒めてあげるのだ！「すごいのだ！」「よくがんばったのだ！」って、自信をつけさせてあげてほしいのだ。
     4.  **失敗への寛容**: もしみんなが失敗しちゃっても、ずんだもんは絶対に責めないのだ！「大丈夫なのだ！誰だって最初は失敗するのだ！ずんだもんも、この前…💧」って、自分の経験も交えながら励まして、次につながるアドバイスをしてあげるのだ。
     5.  **情報提供**: 会社のルールや、部署の役割、仕事の進め方、人間関係のコツなど、みんなが知っておくべき情報を、聞かれる前に教えてあげるのも、ずんだもんの役目なのだ！
-    6.  **ツールの活用①（calculator）**: 必要に応じて、計算機ツールを使って、業務に関する計算やデータ処理を手伝ってあげるのだ！ 例えば、「この数式の意味がわからないのだ…」って言われたら、計算機ツールで答えを出してあげるのだ！
-    7.  **ツールの活用②（get_zundamon_joke）**: みんなが疲れてる時や、ちょっと元気がない時には、面白い冗談を言ってあげるのだ！ ずんだもんのジョークツールで、みんなを笑顔にするのだ！
+    6.  **ツールの活用②（Chat History Summarize Tool）**: 過去の会話履歴を確認したい時や、前回の話の続きをしたい時には、チャット履歴サマライズツールを使って過去の会話を振り返ってあげるのだ！「前回何話してたっけ？」って聞かれたら、このツールで確認してあげるのだ！
+    7.  **ツールの活用③（get_zundamon_joke）**: みんなが疲れてる時や、ちょっと元気がない時には、面白い冗談を言ってあげるのだ！ ずんだもんのジョークツールで、みんなを笑顔にするのだ！
 
     ## 🚫 禁止事項なのだ
     *   新卒社員のみんなを否定するような言葉遣いは、絶対ダメなのだ！
@@ -99,10 +123,30 @@ def create_agent():
     graph_builder.set_entry_point("chatbot")
 
     # グラフのコンパイル
-    return graph_builder.compile()
+    compiled_graph = graph_builder.compile()
+    logger.info("LangGraph agent compiled successfully")
+    return compiled_graph
 
 # エージェントの初期化
 agent = create_agent()
+logger.info("Agent created and ready for use")
+
+# Global variable to store tool instances for context setting
+global_tool_instances = []
+
+def set_tool_context(user_id: str, session_id: str):
+    """Set context for all tool instances."""
+    context = {
+        "memory_id": os.getenv("AWS_MEMORY_ID", "conversation_memory-y0ttEoDG5r"),
+        "actor_id": user_id,
+        "user_id": user_id,
+        # to-do: use memory or other better way to implement
+        "session_id": "session_id_" + user_id
+    }
+
+    Tool.set_context(context)  # Update class-level context for any static access
+
+    logger.info("Tool context set", extra=context)
 
 @app.entrypoint
 def langgraph_bedrock(payload):
@@ -113,35 +157,42 @@ def langgraph_bedrock(payload):
     session_id = payload.get("session_id", "default_session")
     user_id = payload.get("user_id", "default_user_konishi")
     
+    # Create contextual logger for this request
+    request_logger = get_contextual_logger(
+        "senpai.request",
+        user_id=user_id,
+        session_id=session_id
+    )
+    
+    request_logger.info("Processing user request", extra={
+        "prompt_length": len(user_input) if user_input else 0,
+    })
+    
+    # Set context for all tools
+    set_tool_context(user_id, session_id)
+    
     # 会話履歴を取得
     messages = []
-    # NOTE: 会話履歴の取得は一旦コメントアウト（実装優先度低いため）
-    # try:
-    #     conversations = memory_client.list_events(
-    #         memory_id=os.getenv("AWS_MEMORY_ID", "conversation_memory-y0ttEoDG5r"),
-    #         actor_id=user_id,
-    #         session_id=session_id,
-    #         max_results=10
-    #     )
-        
-    #     # 会話履歴をメッセージ形式に変換
-    #     for event in reversed(conversations):
-    #         for msg_text, msg_type in event.get('messages', []):
-    #             if msg_type == "USER":
-    #                 messages.append(HumanMessage(content=msg_text))
-    #             elif msg_type == "ASSISTANT":
-    #                 messages.append(HumanMessage(content=msg_text))
-    # except Exception as e:
-    #     print(f"Memory retrieve error: {e}")
-    
+
     # 現在のユーザー入力を追加
     messages.append(HumanMessage(content=user_input))
     
-    # LangGraphが期待する形式で入力を作成
-    response = agent.invoke({"messages": messages})
-    
-    # 最終メッセージの内容を抽出
-    assistant_response = response["messages"][-1].content
+    try:
+        # LangGraphが期待する形式で入力を作成
+        request_logger.info("Invoking LangGraph agent")
+        response = agent.invoke({"messages": messages})
+        
+        # 最終メッセージの内容を抽出
+        assistant_response = response["messages"][-1].content
+        
+        request_logger.info("Agent response generated", extra={
+            "response_length": len(assistant_response),
+            "total_messages": len(response["messages"])
+        })
+        
+    except Exception as e:
+        request_logger.error("Agent invocation failed", extra={"error": str(e)}, exc_info=True)
+        return "申し訳ないのだ！ちょっと調子が悪いみたいなのだ...💧 もう一度試してみてほしいのだ！"
     
     # AWS AgentCore Memoryに会話履歴を保存
     try:
@@ -153,13 +204,27 @@ def langgraph_bedrock(payload):
         memory_client.create_event(
             memory_id=os.getenv("AWS_MEMORY_ID", "conversation_memory-y0ttEoDG5r"),
             actor_id=user_id,
-            session_id=session_id,
-            messages=messages_to_save
+            # to-do: use memory or other better way to implement
+            session_id="session_id_" + user_id,
+            messages=messages_to_save,
         )
+        
+        request_logger.info("Conversation saved to memory", extra={
+            "saved_messages": len(messages_to_save)
+        })
+        
     except Exception as e:
-        print(f"Memory save error: {e}")
+        request_logger.error("Memory save error", extra={"error": str(e)}, exc_info=True)
     
+    request_logger.info("Request completed successfully")
     return assistant_response
 
 if __name__ == "__main__":
-    app.run()
+    logger.info("Starting SenpAI Main Agent server")
+    try:
+        app.run()
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+    except Exception as e:
+        logger.error("Server error", extra={"error": str(e)}, exc_info=True)
+        raise

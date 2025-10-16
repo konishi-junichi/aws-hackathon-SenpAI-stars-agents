@@ -209,3 +209,6 @@ __marimo__/
 # bedrock agent ignore
 *.log
 */.bedrock_agentcore.yaml
+
+# ignore vscode settings
+.vscode/
