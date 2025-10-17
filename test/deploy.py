@@ -43,7 +43,14 @@ response = agentcore_runtime.configure(
 
     
 # エージェントをAgentCore Runtimeにデプロイ・起動
-launch_result = agentcore_runtime.launch(auto_update_on_conflict=True)
+launch_result = agentcore_runtime.launch(auto_update_on_conflict=True,
+                                         env_vars={
+                                             "AWS_REGION": region,
+                                             "LOG_LEVEL": os.getenv("LOG_LEVEL", "INFO"),
+                                             "LOG_FORMAT": os.getenv("LOG_FORMAT", "console"),
+                                             "LOG_FILE": os.getenv("LOG_FILE", ""),
+                                             "AWS_MEMORY_ID": os.getenv("AWS_MEMORY_ID", "conversation_memory-y0ttEoDG5r")
+                                         })
 
 # local build
 # launch_result = agentcore_runtime.launch(local=True, auto_update_on_conflict=True)
