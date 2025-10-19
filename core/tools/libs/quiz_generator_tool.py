@@ -14,6 +14,11 @@ class QuizGeneratorTool(Tool):
     - bedrock-agent-runtime:Retrieve
     - bedrock-agent-runtime:RetrieveAndGenerate
     """
+    
+    def __init__(self):
+        """Initialize the QuizGeneratorTool."""
+        super().__init__()
+    
     @property
     def name(self):
         return "generate_quiz"

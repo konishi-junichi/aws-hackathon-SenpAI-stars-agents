@@ -4,6 +4,11 @@ import random
 
 @ToolFactory.register_tool
 class ZundamonJokeTool(Tool):
+    
+    def __init__(self):
+        """Initialize the ZundamonJokeTool."""
+        super().__init__()
+    
     @property
     def name(self):
         return "get_zundamon_joke"
