@@ -43,7 +43,10 @@ response = agentcore_runtime.configure(
 
     
 # エージェントをAgentCore Runtimeにデプロイ・起動
-launch_result = agentcore_runtime.launch(auto_update_on_conflict=True)
+launch_result = agentcore_runtime.launch(
+    auto_update_on_conflict=True
+    # ,env_vars={"LOCALE": "en_EN"} # env_varsで言語切り替え
+)
 
 # local build
 # launch_result = agentcore_runtime.launch(local=True, auto_update_on_conflict=True)
