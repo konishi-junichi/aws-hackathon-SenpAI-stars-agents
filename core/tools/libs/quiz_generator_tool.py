@@ -44,15 +44,15 @@ class QuizGeneratorTool(Tool):
         try:
             kb = boto3.client("bedrock-agent-runtime", region_name=os.getenv("AWS_REGION", "us-west-2"))
             
-            query = f"""{topic}について{difficulty}レベルの3択問題を{num_questions}問、異なる種類の問題を作成してください。
-            以下のJSON形式で回答してください：
+            query = f"""Please create {num_questions} multiple-choice questions at {difficulty} level about {topic}, with different types of questions.
+            Please respond in the following JSON format:
             {{
-                "questions": ["問題文1", "問題文2", ...],
-                "selects": [{{"A": "選択肢Aの文章", "B": "選択肢Bの文章", "C": "選択肢Cの文章"}}, ...],
+                "questions": ["Question 1 text", "Question 2 text", ...],
+                "selects": [{{"A": "Choice A text", "B": "Choice B text", "C": "Choice C text"}}, ...],
                 "answers": ["A", "B", ...],
-                "explanations": ["解説1の文章", "解説2の文章", ...]
+                "explanations": ["Explanation 1 text", "Explanation 2 text", ...]
             }}
-            各問題は選択肢A、B、Cの3択形式で、学習に適した内容にしてください。"""
+            Each question should be in 3-choice format (A, B, C) and suitable for learning purposes."""
             
             response = kb.retrieve_and_generate(
                 input={"text": query},
