@@ -22,7 +22,7 @@ app = BedrockAgentCoreApp()
 memory_client = MemoryClient(region_name=os.getenv("AWS_REGION", "us-west-2"))
 
 # 言語設定
-locale = os.getenv("LOCALE", "ja_JP")
+locale = os.getenv("LOCALE", "en_EN")
 
 def create_agent():
     """LangGraphエージェントの作成と設定"""

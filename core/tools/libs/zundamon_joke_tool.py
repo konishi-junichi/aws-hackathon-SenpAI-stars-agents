@@ -14,15 +14,15 @@ class ZundamonJokeTool(Tool):
 
     def run(self) -> str:
         jokes = [
-            "この前、お昼ご飯にずんだ餅を食べながら資料を読んでたら、うっかり大事な部分にずんだをつけちゃったのだ！…まぁ、おいしそうになったからいっか！😊",
-            "部長に「もっとフレッシュなアイデアを出してくれ！」って言われたから、ずんだもん、会社にずんだ餅をたくさん持っていったのだ！…「フレッシュ」って、そういう意味じゃないって怒られちゃったのだ…💧",
-            "みんなのコーヒーを淹れてあげようとしたら、お砂糖と塩を間違えちゃったのだ！…みんな、しょっぱいコーヒー、ごめんなのだ！💦",
-            "会議で「この件はペンディングで！」って言われたから、ずんだもん、ペンをぶら下げて待ってたのだ！…みんなに笑われちゃったのだ！😅",
-            "資料を印刷する時に、間違えてずんだ餅のレシピを100枚印刷しちゃったのだ…！紙の無駄遣い、ごめんなのだ！💦",
-            "「今日のランチは外で食べよう！」って誘われたから、ずんだもん、お弁当箱にずんだ餅をたくさん詰めて持っていったのだ！…みんな、びっくりしてたのだ。😳",
-            "パソコンのパスワード、いつも「zundamon daisuki」にしてるのだ！…あ、言っちゃったのだ！秘密なのだ！🤫",
-            "「この企画、ずんだもんにお任せ！」って言われたから、企画書全部ずんだ色にしたのだ！…却下されたのだ…。🌱🎨",
-            "エレベーターに乗ろうとしたら、間違えて清掃用具入れに入っちゃったのだ！…まさか、こんなところにずんだ餅があるとは…って、ないのだ！💧",
-            "最近、体調管理のために毎日ずんだ餅を食べてるのだ！…って言ったら、みんなに「それ、太るのだ！」って言われたのだ…。でも、美味しいのだ！😋"
+            "The other day, I was eating zunda mochi while reading documents for lunch, and I accidentally got zunda on an important part! ...Well, it looked delicious, so I guess it's okay! 😊",
+            "The manager told me 'Come up with fresher ideas!' so I brought lots of zunda mochi to the office! ...I got scolded because that's not what 'fresh' means... 💧",
+            "I tried to make coffee for everyone, but I mixed up sugar and salt! ...Everyone, sorry for the salty coffee! 💦",
+            "When they said 'Let's keep this pending!' in the meeting, I hung a pen and waited! ...Everyone laughed at me! 😅",
+            "When printing documents, I accidentally printed 100 copies of a zunda mochi recipe...! Sorry for wasting paper! 💦",
+            "When invited to 'eat lunch outside today!', I packed my lunch box full of zunda mochi and brought it! ...Everyone was surprised. 😳",
+            "I always set my computer password to 'zundamon daisuki'! ...Oops, I said it! It's a secret! 🤫",
+            "When they said 'Leave this project to Zundamon!', I made the entire proposal zunda-colored! ...It got rejected... 🌱🎨",
+            "I tried to get on the elevator but accidentally entered the janitor's closet! ...I thought maybe there would be zunda mochi in such a place... but there wasn't! 💧",
+            "Recently, I've been eating zunda mochi every day for health management! ...When I said that, everyone told me 'That will make you fat!' ...But it's delicious! 😋"
         ]
         return random.choice(jokes)
