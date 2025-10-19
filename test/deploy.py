@@ -50,6 +50,7 @@ launch_result = agentcore_runtime.launch(auto_update_on_conflict=True,
                                              "LOG_FORMAT": os.getenv("LOG_FORMAT", "console"),
                                              "LOG_FILE": os.getenv("LOG_FILE", ""),
                                              "AWS_MEMORY_ID": os.getenv("AWS_MEMORY_ID", "conversation_memory-y0ttEoDG5r")
+                                            #  ,"LOCALE": "en_EN" # env_varsで言語切り替え
                                          })
 
 # local build
